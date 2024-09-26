@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Layout from '../views/Layout.vue'
 import SystemItem from '../views/SystemItem.vue'
 import Login from '@/views/Login.vue'
+import Cookies from 'js-cookie'
+import AdminIndex from '@/views/Admin/AdminIndex.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -22,9 +24,22 @@ const router = createRouter({
           name: 'SystemItem',
           component: SystemItem
         },
+        {
+          path: '/AdminIndex',
+          name: 'AdminIndex',
+          component: AdminIndex
+        },
       ]
     },
   ]
 })
 
+//路由守卫
+router.beforeEach((to,form)=>{
+  if(Cookies.get('user')===null&&to.name!='Login'){
+    return {name:'Login'}
+  }else{
+    return true
+  }
+})
 export default router

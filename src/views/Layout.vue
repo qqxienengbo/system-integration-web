@@ -1,5 +1,14 @@
 <script setup>
 import Header from '@/components/Header.vue';
+import router from '@/router';
+import Cookies from 'js-cookie';
+import { onBeforeMount } from 'vue';
+
+onBeforeMount(()=>{
+  if(!Cookies.get('user')){
+    router.push('/Login')
+  }
+})
 </script>
 
 <template>

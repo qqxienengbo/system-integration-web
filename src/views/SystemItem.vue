@@ -1,24 +1,48 @@
 <script setup>
 import Cookies from 'js-cookie';
-import { ref } from 'vue';
-import axios from 'axios';
+import { onMounted, ref } from 'vue';
+import request from '@/http/request';
 
-const user=ref(JSON.parse(Cookies.get('user')))
-const push=()=>{
-  const url=`http://10.119.61.205:8088/Login?account=${user.value.account}&password=${user.value.password}&secretKey=${user.value.secretKey}`
+const user=ref(Cookies.get('user')?JSON.parse(Cookies.get('user')):{})
+
+/**
+ * 打开对应网站
+ */
+const push=(item)=>{
+  // const url=itemurl+`?account=${user.value.account}&password=${user.value.password}&secretKey=${user.value.secretKey}`
+  const account=encodeURIComponent(item.uact)//进行url编码，防止+等符号乱码，在另一边获取不到完整数据
+  const password=encodeURIComponent(item.upaw)
+  const secretKey=encodeURIComponent(user.value.secretKey)
+  const url=item.urlItem.url+'?account='+account+'&password='+password+'&secretKey='+secretKey
   window.open(url,'_blank')
 }
+
+const urllist=ref([])
+const getUrlList=()=>{
+  request.get("/userurl/getuserurllist",{params:{
+    account:user.value.account,
+    secretKey:user.value.secretKey
+  }}).then(res=>{
+    if(res.code==='0'){
+      urllist.value=res.data
+    }
+  })
+}
+getUrlList()
+
 </script>
 <template>
   <div class="conten">
-    <template v-for="i in 30" :key="i">
-      <!-- <a href="https://www.baidu.com/" target="_blank"> -->
-        <div class="item" @click="push(i)">
+    <template v-for="item in urllist" :key="item">
+        <div class="item" @click="push(item)">
           <div class="logo">
-            <img src="../assets/img/logo.png" alt="">
+            <el-image :src="item.urlItem.logo ? 'http://localhost:8888/api/files/' + item.urlItem.logo : 'http://localhost:8888/api/files/默认图标.png'" 
+            style="border-radius: 25%;"/>
           </div>
           <div class="item-text">
-            <h1>XXXXXXXXXXX系统</h1>
+            <el-tooltip effect="dark" :content="item.urlItem.sysname" placement="top">
+              <h1>{{ item.urlItem.sysname }}</h1>
+            </el-tooltip>
           </div>
         </div>
     </template>
@@ -52,7 +76,7 @@ const push=()=>{
   margin-right: 1%; /* 右边距 */
 }
 
-.logo img {
+.logo el-img {
   width: 100%;
   height: 100%;
   object-fit: contain; /* 确保图片按比例缩放 */

@@ -2,8 +2,10 @@
 import router from '@/router';
 import Cookies from 'js-cookie';
 import { ref } from 'vue';
-const user=ref(JSON.parse(Cookies.get('user')))
+// const user=ref(JSON.parse(Cookies.get('user')))
+const user=ref(Cookies.get('user')?JSON.parse(Cookies.get('user')):{})
 const quit=()=>{
+  Cookies.remove('user')
   router.push("/Login")
 }
 </script>
