@@ -1,164 +1,302 @@
 <script setup>
-import request from '@/http/request';
-import { ref } from 'vue';
+import request from "@/http/request";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { ref } from "vue";
 
 const userdata = ref([]);
 
 const getAllData = () => {
-  request.get("/user/getalldata").then(res => {
-    if (res.code === '0') {
-      const transformedData = res.data.map(user => {
-        if (user.userUrlList) {
-          user.userUrlList = user.userUrlList.map(urlitem => {
-            urlitem.urlItem.limits = urlitem.urlItem.limits === 'true'; // 将 'true' 转换为 true，'false' 转换为 false
-            return urlitem;
-          });
+    request.get("/user/getalldata").then((res) => {
+        if (res.code === "0") {
+            const transformedData = res.data.map((user) => {
+                if (user.userUrlList) {
+                    user.userUrlList = user.userUrlList.map((urlitem) => {
+                        urlitem.limits = urlitem.limits === "true"; //把limits变成开关可以识别的布尔值
+                        return urlitem;
+                    });
+                }
+                return user;
+            });
+            userdata.value = transformedData;
         }
-        return user;
-      });
-
-      userdata.value = transformedData;
-      console.log(transformedData);
-    } else {
-      console.error('Failed to fetch data:', res);
-    }
-  }).catch(error => {
-    console.error('Error fetching data:', error);
-  });
+    });
 };
 
 getAllData();
 //抽屉是否展示
-const drawervalue=ref(false)
+const drawervalue = ref(false);
 //打开的抽屉的信息
-const oneuserdata=ref(null)
+const oneuserdata = ref(null);
 /**
  * 点击修改按钮，弹出抽屉以及相关的用户网站权限信息
- * @param userUrlList 
+ * @param userUrlList
  */
-const openlimits=(userUrlList)=>{
-  oneuserdata.value=userUrlList
-  drawervalue.value=true
-  console.log(userUrlList)
+const openlimits = (userUrlList) => {
+    oneuserdata.value = userUrlList;
+    drawervalue.value = true;
+};
+
+/**
+ * 更新网站权限
+ * @param userUrl
+ */
+const changelimits = (userUrl) => {
+    request.post("/userurl/updatelimits", userUrl);
+};
+/**
+ * 更新用户登录对应网站的账号
+ * @param item
+ */
+const updateuact = (item) => {
+    request.post("/userurl/updateuact", item);
+};
+
+//记录查询的姓名
+const username=ref('')
+
+/**
+ * 根据姓名查询用户信息
+ */
+const selectUserDataByUserName=()=>{
+    if(username.value){
+        request.get("/user/selectUserDataByUserName",{params:{
+        username:username.value
+    }}).then(res=>{
+        if(res.code==='0'){
+            const transformedData = res.data.map((user) => {
+                if (user.userUrlList) {
+                    user.userUrlList = user.userUrlList.map((urlitem) => {
+                        urlitem.limits = urlitem.limits === "true"; //把limits变成开关可以识别的布尔值
+                        return urlitem;
+                    });
+                }
+                return user;
+            });
+            userdata.value = transformedData;
+        }
+    })
+    }else{
+        getAllData();
+    }
 }
 
-const changelimits=()=>{
-    
+//是否显示新增用户的消息对话框
+const centerDialogVisible=ref(false)
+
+/**
+ * 点击新增按钮
+ */
+const showdialog=()=>{
+    newuserdate.value={}
+    centerDialogVisible.value=true
 }
+//记录新增的用户信息
+const newuserdate=ref({})
+
+/**
+ * 添加新用户
+ */
+const adduser=()=>{
+    if(newuserdate.value.account&&newuserdate.value.password&&newuserdate.value.username){
+        request.post("user/adduser",newuserdate.value).then(res=>{
+        if(res.code==='0'){
+                getAllData();
+                ElMessage.success('添加成功！')
+            }
+        })
+        centerDialogVisible.value=false
+    }else{
+        ElMessage.error("请填写完整信息！")
+    }
+}
+
+const remove=(user)=>{
+    request.post("/user/removeuser",user).then(res=>{
+        if(res.code==='0'){
+            ElMessage.success("删除成功！")
+        }
+        getAllData();
+    })
+}
+
+
 </script>
 <template>
     <div class="content">
-      <div>
-      </div>
-      <div>
-        <el-table :data="userdata">
-          <!-- <el-table-column type="expand">
-            <template #default="props">
-              <div class="expand-div">
-                <template v-for="urlitem in props.row.userUrlList" :key="urlitem.id">
-                  <div class="flex-row" style="width: 99%; height: 50px; background-color: #c6e2ff; margin: 5px; border-radius: 20px;">
-                    <h3 class="sysname">{{ urlitem.urlItem.sysname }}</h3>
-                    <el-switch v-model="urlitem.urlItem.limits" class="switch" />
-                  </div>
-                </template>
-              </div>
-            </template>
-          </el-table-column> -->
-          <el-table-column prop="username" label="姓名" align="center" />
-          <el-table-column prop="account" label="账号" align="center" />
-          <el-table-column prop="password" label="密码" align="center" />
-          <el-table-column label="权限" prop="userUrlList" align="center">
-            <template #default="scope">
-            <el-button type="success" @click="openlimits(scope.row)">修改</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-      <div>
-        <el-drawer v-model="drawervalue" direction="rtl">
-    <template #header>
-      <h4>{{ oneuserdata?.username }}--网站权限</h4>
-    </template>
-    <template #default>
-      <div class="drawer-content">
-        <div v-for="item in oneuserdata.userUrlList" :key="item" class="urlitem">
-            <div class="logo">
-            <el-image :src="item.urlItem.logo ? 'http://localhost:8888/api/files/' + item.urlItem.logo : 'http://localhost:8888/api/files/默认图标.png'" 
-            style="border-radius: 25%;"/>
-          </div>
-            <h5>{{ item?.urlItem?.sysname }}</h5>
-            <el-switch v-model="item.urlItem.limits" class="switch" :change="changelimits()" />
+        <div class="search-container">
+            <el-input v-model="username" placeholder="请输入姓名" style="width: 200px;" prefix-icon="el-icon-search" @keyup.enter="selectUserDataByUserName"></el-input>
+            <el-button type="primary" style="margin-left: 10px;" @click="selectUserDataByUserName">查询</el-button>
+            <el-button type="success" style="margin-left: 10px;" @click="showdialog">新增</el-button>
         </div>
+        <div>
+            <el-table :data="userdata" height="500" border>
+                <el-table-column prop="username" label="姓名" align="center" />
+                <el-table-column prop="account" label="账号" align="center" />
+                <el-table-column prop="password" label="密码" align="center" />
+                <el-table-column label="权限" prop="userUrlList" align="center">
+                    <template #default="scope">
+                        <el-button type="success" @click="openlimits(scope.row)">修改</el-button>
+                    </template>
+                </el-table-column>
+                <el-table-column label="操作" align="center">
+                    <template #default="scope">
+                        <el-popconfirm title="确定删除该用户吗?" @confirm="remove(scope.row)">
+                            <template #reference>
+                        <el-button type="danger">删除</el-button>
+                    </template>
+                    </el-popconfirm>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </div>
+        <div>
+            <el-drawer v-model="drawervalue" direction="rtl" size="50%">
+                <template #header>
+                    <h4>{{ oneuserdata?.username }}--网站权限</h4>
+                </template>
+                <template #default>
+                    <div class="drawer-content">
+                        <div v-for="item in oneuserdata.userUrlList" :key="item" class="urlitem">
+                            <div class="logo">
+                                <el-image :src="item.urlItem.logo
+                                    ? 'http://localhost:8888/api/files/' + item.urlItem.logo
+                                    : 'http://localhost:8888/api/files/默认图标.png'
+                                    " style="border-radius: 25%" fit="cover" />
+                            </div>
+                            <h5 style="min-width: 40%">{{ item?.urlItem?.sysname }}</h5>
+                            <el-input v-model="item.uact" style="width: 15%" @change="updateuact(item)"></el-input>
+                            <el-switch v-model="item.limits" class="switch" @change="changelimits(item)" />
+                        </div>
+                    </div>
+                </template>
+            </el-drawer>
+        </div>
+        <div>
+  <el-dialog v-model="centerDialogVisible" title="新增用户" width="25%" center>
+    <el-form v-model="newuserdate" style="width: 100%;">
+        <el-form-item label="姓名" prop="username">
+            <el-input v-model="newuserdate.username"></el-input>
+        </el-form-item>
+        <el-form-item label="账号" prop="account">
+            <el-input v-model="newuserdate.account"></el-input>
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+            <el-input v-model="newuserdate.password"></el-input>
+        </el-form-item>
+    </el-form>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="centerDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="adduser">确定</el-button>
       </div>
     </template>
-  </el-drawer>
-      </div>
+  </el-dialog>
+        </div>
     </div>
-  </template>
-  
-  <style scoped>
-  .content {
-    width: 60vw;
-    height: 100vh;
+</template>
+
+<style scoped>
+.content {
+    width: 80vw;
+    height: 83vh;
     margin: auto auto;
-  }
-  
-  .el-table {
-    max-height: 600px;
-  }
-  
-  .expand-div {
+    padding: 20px;
+    background-color: #f7f7f7;
+    border-radius: 20px;
+}
+
+.el-table {
+    width: 100%;
+    font-size: 14px;
+    color: #333;
+    border-radius: 20px;
+}
+
+.el-table th,
+.el-table td {
+    padding: 10px 0;
+}
+
+.el-table .el-button {
+    padding: 8px 15px;
+}
+
+.expand-div {
     width: 100%;
     max-height: 500px;
-  }
-  .drawer-content {
-  max-height: 580px; /* 你可以根据需要调整这个高度 */
-  overflow-y: auto;
-  padding: 10px;
 }
+
+.drawer-content {
+    max-height: 580px;
+    overflow-y: auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+}
+
 /* 自定义滚动条样式 */
 .drawer-content::-webkit-scrollbar {
-  width: 7px; /* 滚动条的宽度 */
+    width: 7px;
+    /* 滚动条的宽度 */
 }
 
 .drawer-content::-webkit-scrollbar-track {
-  background: #f1f1f1; /* 滚动条轨道的背景色 */
-  border-radius: 3px; /* 滚动条轨道的圆角 */
+    background: #f1f1f1;
+    /* 滚动条轨道的背景色 */
+    border-radius: 3px;
+    /* 滚动条轨道的圆角 */
 }
 
 .drawer-content::-webkit-scrollbar-thumb {
-  background: #888; /* 滚动条滑块的背景色 */
-  border-radius: 3px; /* 滚动条滑块的圆角 */
+    background: #888;
+    /* 滚动条滑块的背景色 */
+    border-radius: 3px;
+    /* 滚动条滑块的圆角 */
 }
 
 .drawer-content::-webkit-scrollbar-thumb:hover {
-  background: #555; /* 滚动条滑块悬停时的背景色 */
+    background: #555;
+    /* 滚动条滑块悬停时的背景色 */
 }
-  .urlitem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px;
-  border-bottom: 1px solid #ebeef5;
+
+.urlitem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px solid #ebeef5;
 }
+
 .logo {
-  width: 10%;
-  height: 50%;
-  margin-right: 1%; /* 右边距 */
+    width: 7%;
+    margin-right: 1%;
+    /* 右边距 */
 }
 
 .logo el-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain; /* 确保图片按比例缩放 */
+    object-fit: contain;
+    /* 确保图片按比例缩放 */
 }
+
 .sysname {
-  flex: 1;
-  margin-right: 10px;
+    flex: 1;
+    margin-right: 10px;
 }
 
 .switch {
-  margin-left: 10px;
+    margin-left: 10px;
 }
 
-  </style>
+.search-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    /* 根据需要调整间距 */
+}
+
+.search-container .el-button:hover,
+.search-container .el-button:focus {
+    border-color: #66b1ff;
+    /* 悬停时边框颜色 */
+}
+</style>

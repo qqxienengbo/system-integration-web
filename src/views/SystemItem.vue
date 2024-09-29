@@ -11,9 +11,9 @@ const user=ref(Cookies.get('user')?JSON.parse(Cookies.get('user')):{})
 const push=(item)=>{
   // const url=itemurl+`?account=${user.value.account}&password=${user.value.password}&secretKey=${user.value.secretKey}`
   const account=encodeURIComponent(item.uact)//进行url编码，防止+等符号乱码，在另一边获取不到完整数据
-  const password=encodeURIComponent(item.upaw)
+  // const password=encodeURIComponent(item.upaw)
   const secretKey=encodeURIComponent(user.value.secretKey)
-  const url=item.urlItem.url+'?account='+account+'&password='+password+'&secretKey='+secretKey
+  const url=item.urlItem.url+'?account='+account+'&secretKey='+secretKey
   window.open(url,'_blank')
 }
 

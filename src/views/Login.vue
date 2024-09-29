@@ -4,6 +4,7 @@ import router from '@/router';
 import { ElMessage } from 'element-plus';
 import { onMounted, ref } from 'vue';
 import Cookies from 'js-cookie';
+import { decryptAES } from '@/util/crypto';
 
 const userdata = ref({
   account: '',
@@ -29,24 +30,19 @@ const rules = ref({
 });
 
 const submitForm = () => {
-  if(userdata.value.account==='xienengbo'&&userdata.value.password==='15778734692'){
-    Cookies.set('user',JSON.stringify({
-      account:userdata.value.account,
-      password:userdata.value.password,
-      username:'博'
-    }))
-    router.push('/AdminIndex')
-  }else{
     request.post("/user/login",userdata.value).then(res=>{
     if(res.code==='0'){
       Cookies.set('user',JSON.stringify(res.data),{expires:1})
       ElMessage.success("登录成功！")
-      router.push('/')
+      if(decryptAES(res.data.account,res.data.secretKey)==='admin'){
+        router.push('/AdminIndex')
+      }else{
+        router.push('/')
+      }
     }else{
       ElMessage.error(res.msg)
     }
   })
-  }
 }
 
 </script>
