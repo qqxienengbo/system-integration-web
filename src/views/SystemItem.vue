@@ -11,9 +11,10 @@ const user=ref(Cookies.get('user')?JSON.parse(Cookies.get('user')):{})
 const push=(item)=>{
   // const url=itemurl+`?account=${user.value.account}&password=${user.value.password}&secretKey=${user.value.secretKey}`
   const account=encodeURIComponent(item.uact)//进行url编码，防止+等符号乱码，在另一边获取不到完整数据
-  // const password=encodeURIComponent(item.upaw)
+  const password=encodeURIComponent(item.upaw)
   const secretKey=encodeURIComponent(user.value.secretKey)
-  const url=item.urlItem.url+'?account='+account+'&secretKey='+secretKey
+  const url=item.urlItem.url+'?account='+account+'&secretKey='+secretKey+'&password='+password
+  // const url=item.urlItem.url+'?account='+account+'&secretKey='+secretKey
   window.open(url,'_blank')
 }
 
@@ -36,7 +37,7 @@ getUrlList()
     <template v-for="item in urllist" :key="item">
         <div class="item" @click="push(item)">
           <div class="logo">
-            <el-image :src="item.urlItem.logo ? 'http://localhost:8888/api/files/' + item.urlItem.logo : 'http://localhost:8888/api/files/默认图标.png'" 
+            <el-image :src="item.urlItem.logo ? 'http://localhost:8888/api/files/logo/' + item.urlItem.logo : 'http://localhost:8888/api/files/logo/默认图标.png'" 
             style="border-radius: 25%;"/>
           </div>
           <div class="item-text">

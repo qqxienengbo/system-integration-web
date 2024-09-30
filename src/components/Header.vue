@@ -8,6 +8,10 @@ const quit=()=>{
   Cookies.remove('user')
   router.push("/Login")
 }
+
+const toMe=()=>{
+  router.push("/Me")
+}
 </script>
 <template>
   <div class="conten">
@@ -22,7 +26,7 @@ const quit=()=>{
         <h3>{{ user.username }}</h3>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item>个人中心</el-dropdown-item>
+            <el-dropdown-item @click="toMe">个人中心</el-dropdown-item>
             <el-dropdown-item @click="quit">退出登录</el-dropdown-item>
           </el-dropdown-menu>
         </template>

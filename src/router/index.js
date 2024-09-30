@@ -4,6 +4,7 @@ import SystemItem from '../views/SystemItem.vue'
 import Login from '@/views/Login.vue'
 import Cookies from 'js-cookie'
 import AdminIndex from '@/views/Admin/AdminIndex.vue'
+import Me from '@/views/Me.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,6 +29,11 @@ const router = createRouter({
           path: '/AdminIndex',
           name: 'AdminIndex',
           component: AdminIndex
+        },
+        {
+          path: '/Me',
+          name: 'Me',
+          component: Me
         },
       ]
     },

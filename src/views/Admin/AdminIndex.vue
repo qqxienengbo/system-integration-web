@@ -1,6 +1,7 @@
 <script setup>
+import file from "@/http/file";
 import request from "@/http/request";
-import { ElMessage, ElMessageBox } from "element-plus";
+import { ElMessage, ElMessageBox, genFileId } from "element-plus";
 import { ref } from "vue";
 
 const userdata = ref([]);
@@ -52,81 +53,146 @@ const updateuact = (item) => {
 };
 
 //记录查询的姓名
-const username=ref('')
+const username = ref('')
 
 /**
  * 根据姓名查询用户信息
  */
-const selectUserDataByUserName=()=>{
-    if(username.value){
-        request.get("/user/selectUserDataByUserName",{params:{
-        username:username.value
-    }}).then(res=>{
-        if(res.code==='0'){
-            const transformedData = res.data.map((user) => {
-                if (user.userUrlList) {
-                    user.userUrlList = user.userUrlList.map((urlitem) => {
-                        urlitem.limits = urlitem.limits === "true"; //把limits变成开关可以识别的布尔值
-                        return urlitem;
-                    });
-                }
-                return user;
-            });
-            userdata.value = transformedData;
-        }
-    })
-    }else{
+const selectUserDataByUserName = () => {
+    if (username.value) {
+        request.get("/user/selectUserDataByUserName", {
+            params: {
+                username: username.value
+            }
+        }).then(res => {
+            if (res.code === '0') {
+                const transformedData = res.data.map((user) => {
+                    if (user.userUrlList) {
+                        user.userUrlList = user.userUrlList.map((urlitem) => {
+                            urlitem.limits = urlitem.limits === "true"; //把limits变成开关可以识别的布尔值
+                            return urlitem;
+                        });
+                    }
+                    return user;
+                });
+                userdata.value = transformedData;
+            }
+        })
+    } else {
         getAllData();
     }
 }
 
 //是否显示新增用户的消息对话框
-const centerDialogVisible=ref(false)
+const centerDialogVisible = ref(false)
 
 /**
- * 点击新增按钮
+ * 点击新增用户按钮
  */
-const showdialog=()=>{
-    newuserdate.value={}
-    centerDialogVisible.value=true
+const showuserdialog = () => {
+    newuserdate.value = {}
+    centerDialogVisible.value = true
 }
 //记录新增的用户信息
-const newuserdate=ref({})
+const newuserdate = ref({})
 
 /**
  * 添加新用户
  */
-const adduser=()=>{
-    if(newuserdate.value.account&&newuserdate.value.password&&newuserdate.value.username){
-        request.post("user/adduser",newuserdate.value).then(res=>{
-        if(res.code==='0'){
+const adduser = () => {
+    if (newuserdate.value.account && newuserdate.value.password && newuserdate.value.username) {
+        request.post("user/adduser", newuserdate.value).then(res => {
+            if (res.code === '0') {
                 getAllData();
                 ElMessage.success('添加成功！')
             }
         })
-        centerDialogVisible.value=false
-    }else{
+        centerDialogVisible.value = false
+    } else {
         ElMessage.error("请填写完整信息！")
     }
 }
 
-const remove=(user)=>{
-    request.post("/user/removeuser",user).then(res=>{
-        if(res.code==='0'){
+/**
+ * 删除用户
+ * @param user 
+ */
+const remove = (user) => {
+    request.post("/user/removeuser", user).then(res => {
+        if (res.code === '0') {
             ElMessage.success("删除成功！")
         }
         getAllData();
     })
 }
 
+//是否展示新增系统信息对话框
+const urlDialogVisible = ref(false)
+
+//记录新增的系统信息
+const newurldata = ref({})
+//记录要上传的图标文件
+const logofile=ref([])
+
+/**
+ * 打开添加系统的对话框
+ */
+const showurldialog=()=>{
+    newurldata.value={}
+    logofile.value=[]
+    urlDialogVisible.value=true
+}
+
+const addurl=()=>{
+    // if(newurldata.value.url&&newurldata.value.sysname){
+    //     request.get("/urlitem/addUrlItem",{params:{
+    //     url:newurldata.value.url,
+    //     sysname:newurldata.value.sysname
+    // }}).then(res=>{
+    //     if(res.code==='0'){
+    //         if(logofile.value.length>0){
+    //             let fileData = new FormData()
+    //             fileData.append('file', logofile.value[0].raw)
+    //             fileData.append('urlid',res.data)
+    //             file.post("/files/uplogo",fileData).then(response=>{
+    //                 if(response.data.code==='0'){
+    //                     getAllData()
+    //                     ElMessage.success("添加系统成功！")
+    //                 }
+    //             })
+    //         }
+    //     }
+    // })
+    // }else{
+    //     ElMessage.error("系统名称和访问网址不能为空！")
+    // }
+    // urlDialogVisible.value=false
+}
+
+/**
+ * 文件数量超出限制时
+ */
+const handleExceed=()=>{
+    ElMessage.warning("只能上传一个文件,请先删除再选择!")
+}
+
+const isfiletype=()=>{
+    //获取文件后缀比较
+    // if(logofile){
+
+    // }
+    console.log(logofile.value)
+}
 
 </script>
 <template>
     <div class="content">
         <div class="search-container">
-            <el-input v-model="username" placeholder="请输入姓名" style="width: 200px;" prefix-icon="el-icon-search" @keyup.enter="selectUserDataByUserName"></el-input>
+            <el-input v-model="username" placeholder="请输入姓名" style="width: 200px;" prefix-icon="el-icon-search"
+                @keyup.enter="selectUserDataByUserName"></el-input>
             <el-button type="primary" style="margin-left: 10px;" @click="selectUserDataByUserName">查询</el-button>
-            <el-button type="success" style="margin-left: 10px;" @click="showdialog">新增</el-button>
+            <el-button type="success" style="margin-left: 10px;" @click="showuserdialog">添加用户</el-button>
+            <el-button type="success" style="margin-left: 10px;" @click="showurldialog">添加系统</el-button>
         </div>
         <div>
             <el-table :data="userdata" height="500" border>
@@ -142,9 +208,9 @@ const remove=(user)=>{
                     <template #default="scope">
                         <el-popconfirm title="确定删除该用户吗?" @confirm="remove(scope.row)">
                             <template #reference>
-                        <el-button type="danger">删除</el-button>
-                    </template>
-                    </el-popconfirm>
+                                <el-button type="danger">删除</el-button>
+                            </template>
+                        </el-popconfirm>
                     </template>
                 </el-table-column>
             </el-table>
@@ -159,8 +225,8 @@ const remove=(user)=>{
                         <div v-for="item in oneuserdata.userUrlList" :key="item" class="urlitem">
                             <div class="logo">
                                 <el-image :src="item.urlItem.logo
-                                    ? 'http://localhost:8888/api/files/' + item.urlItem.logo
-                                    : 'http://localhost:8888/api/files/默认图标.png'
+                                    ? 'http://localhost:8888/api/files/logo/' + item.urlItem.logo
+                                    : 'http://localhost:8888/api/files/logo/默认图标.png'
                                     " style="border-radius: 25%" fit="cover" />
                             </div>
                             <h5 style="min-width: 40%">{{ item?.urlItem?.sysname }}</h5>
@@ -172,25 +238,57 @@ const remove=(user)=>{
             </el-drawer>
         </div>
         <div>
-  <el-dialog v-model="centerDialogVisible" title="新增用户" width="25%" center>
-    <el-form v-model="newuserdate" style="width: 100%;">
-        <el-form-item label="姓名" prop="username">
-            <el-input v-model="newuserdate.username"></el-input>
-        </el-form-item>
-        <el-form-item label="账号" prop="account">
-            <el-input v-model="newuserdate.account"></el-input>
-        </el-form-item>
-        <el-form-item label="密码" prop="password">
-            <el-input v-model="newuserdate.password"></el-input>
-        </el-form-item>
-    </el-form>
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="centerDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="adduser">确定</el-button>
-      </div>
-    </template>
-  </el-dialog>
+            <el-dialog v-model="centerDialogVisible" title="添加用户" width="25%" center>
+                <el-form v-model="newuserdate" style="width: 100%;">
+                    <el-form-item label="姓名" prop="username">
+                        <el-input v-model="newuserdate.username"></el-input>
+                    </el-form-item>
+                    <el-form-item label="账号" prop="account">
+                        <el-input v-model="newuserdate.account"></el-input>
+                    </el-form-item>
+                    <el-form-item label="密码" prop="password">
+                        <el-input v-model="newuserdate.password"></el-input>
+                    </el-form-item>
+                </el-form>
+                <template #footer>
+                    <div class="dialog-footer">
+                        <el-button @click="centerDialogVisible = false">取消</el-button>
+                        <el-button type="primary" @click="adduser">确定</el-button>
+                    </div>
+                </template>
+            </el-dialog>
+        </div>
+        <div>
+            <el-dialog v-model="urlDialogVisible" title="添加系统" width="30%" center>
+                <el-form v-model="newurldata" style="width: 100%;">
+                    <el-form-item label="系统名称" prop="sysname">
+                        <el-input v-model="newurldata.sysname"></el-input>
+                    </el-form-item>
+                    <el-form-item label="访问网址" prop="url">
+                        <el-input v-model="newurldata.url"></el-input>
+                    </el-form-item>
+                    <el-form-item label="系统图标">
+                        <el-upload v-model:file-list="logofile" 
+                        :limit="1" 
+                        :on-exceed="handleExceed" 
+                        :auto-upload="true"
+                        :http-request="isfiletype"
+                        accept=".png,.jpeg,.jpg"
+                        list-type="picture"
+                        >
+                            <template #trigger>
+                                <el-button type="primary">选择文件</el-button>
+                            </template>
+                        </el-upload>
+                    </el-form-item>
+                </el-form>
+                <template #footer>
+                    <div class="dialog-footer">
+                        <el-button @click="urlDialogVisible = false">取消</el-button>
+                        <el-button type="primary" @click="addurl">确定</el-button>
+                    </div>
+                </template>
+            </el-dialog>
         </div>
     </div>
 </template>
