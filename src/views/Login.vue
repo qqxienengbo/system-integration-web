@@ -35,9 +35,9 @@ const submitForm = () => {
       Cookies.set('user',JSON.stringify(res.data),{expires:1})
       ElMessage.success("登录成功！")
       if(decryptAES(res.data.account,res.data.secretKey)==='admin'){
-        router.push('/AdminIndex')
+        router.push('/AUserM')
       }else{
-        router.push('/')
+        router.push('/SystemItem')
       }
     }else{
       ElMessage.error(res.msg)

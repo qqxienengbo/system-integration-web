@@ -3,8 +3,10 @@ import Layout from '../views/Layout.vue'
 import SystemItem from '../views/SystemItem.vue'
 import Login from '@/views/Login.vue'
 import Cookies from 'js-cookie'
-import AdminIndex from '@/views/Admin/AdminIndex.vue'
+import AUserM from '@/views/Admin/AUserM.vue'
+import ASystemM from '@/views/Admin/ASystemM.vue'
 import Me from '@/views/Me.vue'
+import ALayout from '@/views/Admin/ALayout.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -15,10 +17,9 @@ const router = createRouter({
       component:Login
     },
     {
-      path: '/',
+      path: '/Layout',
       name: 'Layout',
       component: Layout,
-      redirect:'/SystemItem',
       children:[
         {
           path: '/SystemItem',
@@ -26,9 +27,21 @@ const router = createRouter({
           component: SystemItem
         },
         {
-          path: '/AdminIndex',
-          name: 'AdminIndex',
-          component: AdminIndex
+          path: '/ALayout',
+          name: 'ALayout',
+          component: ALayout,
+          children:[
+            {
+              path:'/AUserM',
+              name:'AUserM',
+              component:AUserM
+            },
+            {
+              path:'/ASystemM',
+              name:'ASystemM',
+              component:ASystemM
+            },
+          ]
         },
         {
           path: '/Me',
